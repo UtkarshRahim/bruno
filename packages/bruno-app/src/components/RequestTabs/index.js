@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import find from 'lodash/find';
 import filter from 'lodash/filter';
+import get from 'lodash/get';
 import classnames from 'classnames';
 import { IconChevronRight, IconChevronLeft } from '@tabler/icons';
 import { useSelector, useDispatch } from 'react-redux';
@@ -28,6 +29,8 @@ const RequestTabs = () => {
   const sidebarCollapsed = useSelector((state) => state.app.sidebarCollapsed);
   const screenWidth = useSelector((state) => state.app.screenWidth);
   const workspaces = useSelector((state) => state.workspaces.workspaces);
+  const preferences = useSelector((state) => state.app.preferences);
+  const activeWorkspaceUid = useSelector((state) => state.workspaces.activeWorkspaceUid);
 
   const createSetHasOverflow = useCallback((tabUid) => {
     return (hasOverflow) => {
@@ -45,7 +48,27 @@ const RequestTabs = () => {
 
   const activeTab = find(tabs, (t) => t.uid === activeTabUid);
   const activeCollection = find(collections, (c) => c?.uid === activeTab?.collectionUid);
-  const collectionRequestTabs = filter(tabs, (t) => t.collectionUid === activeTab?.collectionUid);
+  const unifiedTabs = get(preferences, 'general.unifiedTabs', false);
+  
+  const activeWorkspace = find(workspaces, (w) => w.uid === activeWorkspaceUid);
+  const workspaceCollectionUids = useMemo(() => {
+    if (!activeWorkspace || !unifiedTabs) return [];
+    return collections
+      .filter(c => c.workspaceUid === activeWorkspaceUid)
+      .map(c => c.uid);
+  }, [activeWorkspace, activeWorkspaceUid, collections, unifiedTabs]);
+
+  const collectionRequestTabs = useMemo(() => {
+    if (unifiedTabs && activeWorkspace) {
+      return filter(tabs, (t) => {
+        if (t.type === 'workspaceOverview' || t.type === 'workspaceEnvironments') {
+          return true;
+        }
+        return workspaceCollectionUids.includes(t.collectionUid);
+      });
+    }
+    return filter(tabs, (t) => t.collectionUid === activeTab?.collectionUid);
+  }, [tabs, activeTab, unifiedTabs, activeWorkspace, workspaceCollectionUids]);
 
   const isScratchCollection = useMemo(() => {
     return activeCollection ? workspaces.some((w) => w.scratchCollectionUid === activeCollection.uid) : false;
