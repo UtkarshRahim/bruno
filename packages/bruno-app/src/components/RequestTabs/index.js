@@ -176,6 +176,9 @@ const RequestTabs = () => {
               <ul role="tablist" ref={tabsRef}>
                 {collectionRequestTabs && collectionRequestTabs.length
                   ? collectionRequestTabs.map((tab, index) => {
+                      const tabCollection = unifiedTabs 
+                        ? find(collections, (c) => c.uid === tab.collectionUid) || activeCollection
+                        : activeCollection;
                       return (
                         <DraggableTab
                           key={tab.uid}
@@ -196,7 +199,7 @@ const RequestTabs = () => {
                             tabIndex={index}
                             key={tab.uid}
                             tab={tab}
-                            collection={activeCollection}
+                            collection={tabCollection}
                             folderUid={tab.folderUid}
                             hasOverflow={tabOverflowStates[tab.uid]}
                             setHasOverflow={createSetHasOverflow(tab.uid)}
