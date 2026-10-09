@@ -71,7 +71,7 @@ const RequestTabs = () => {
     if (unifiedTabs && activeWorkspace) {
       return filter(tabs, (t) => {
         if (t.type === 'workspaceOverview' || t.type === 'workspaceEnvironments') {
-          return true;
+          return t.collectionUid === activeWorkspace.scratchCollectionUid;
         }
         return workspaceCollectionUids.includes(t.collectionUid);
       });
