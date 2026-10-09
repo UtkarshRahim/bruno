@@ -3,6 +3,7 @@ import find from 'lodash/find';
 import filter from 'lodash/filter';
 import get from 'lodash/get';
 import classnames from 'classnames';
+import { normalizePath } from 'utils/common/path';
 import { IconChevronRight, IconChevronLeft } from '@tabler/icons';
 import { useSelector, useDispatch } from 'react-redux';
 import { focusTab, reorderTabs } from 'providers/ReduxStore/slices/tabs';
@@ -53,10 +54,18 @@ const RequestTabs = () => {
   const activeWorkspace = find(workspaces, (w) => w.uid === activeWorkspaceUid);
   const workspaceCollectionUids = useMemo(() => {
     if (!activeWorkspace || !unifiedTabs) return [];
+    
+    const workspaceCollectionPaths = activeWorkspace.collections?.map((wc) => wc.path) || [];
+    
     return collections
-      .filter(c => c.workspaceUid === activeWorkspaceUid)
-      .map(c => c.uid);
-  }, [activeWorkspace, activeWorkspaceUid, collections, unifiedTabs]);
+      .filter((c) => {
+        if (c.mountStatus !== 'mounted') return false;
+        const isScratch = workspaces.some((w) => w.scratchCollectionUid === c.uid);
+        if (isScratch) return false;
+        return workspaceCollectionPaths.some((wcPath) => normalizePath(c.pathname) === normalizePath(wcPath));
+      })
+      .map((c) => c.uid);
+  }, [activeWorkspace, collections, workspaces, unifiedTabs]);
 
   const collectionRequestTabs = useMemo(() => {
     if (unifiedTabs && activeWorkspace) {
